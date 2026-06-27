@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+from app.auth.jwt_handler import get_current_user
+
 from app.model.toy import Toy
 
 from app.service.toy_service import ToyService
@@ -29,7 +31,8 @@ service = ToyService()
     response_model=list[ToyResponse]
 )
 def get_all(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.list_toys(db)
 
@@ -40,7 +43,8 @@ def get_all(
 )
 def get_by_id(
         toy_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     toy = service.get_toy(
@@ -59,7 +63,8 @@ def get_by_id(
     "/report/toys-by-donor"
 )
 def toys_by_donor(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.toys_by_donor(db)
 
@@ -70,7 +75,8 @@ def toys_by_donor(
 )
 def add(
         toy_data: ToyCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     toy = Toy(
@@ -93,7 +99,8 @@ def add(
 def update(
         toy_id: int,
         toy_data: ToyUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     toy = service.get_toy(
@@ -123,7 +130,8 @@ def update(
 )
 def delete(
         toy_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     toy = service.get_toy(

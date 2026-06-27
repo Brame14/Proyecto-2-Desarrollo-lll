@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+from app.auth.jwt_handler import get_current_user
+
 from app.model.beneficiary import Beneficiary
 
 from app.service.beneficiary_service import BeneficiaryService
@@ -29,7 +31,8 @@ service = BeneficiaryService()
     response_model=list[BeneficiaryResponse]
 )
 def get_all(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.list_beneficiaries(db)
 
@@ -40,7 +43,8 @@ def get_all(
 )
 def get_by_id(
         beneficiary_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     beneficiary = service.get_beneficiary(
@@ -63,7 +67,8 @@ def get_by_id(
 )
 def add(
         beneficiary_data: BeneficiaryCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     beneficiary = Beneficiary(
@@ -86,7 +91,8 @@ def add(
 def update(
         beneficiary_id: int,
         beneficiary_data: BeneficiaryUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     beneficiary = service.get_beneficiary(
@@ -116,7 +122,8 @@ def update(
 )
 def delete(
         beneficiary_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     beneficiary = service.get_beneficiary(

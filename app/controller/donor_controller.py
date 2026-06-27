@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+from app.auth.jwt_handler import get_current_user
+
 from app.model.donor import Donor
 
 from app.service.donor_service import DonorService
@@ -29,7 +31,8 @@ service = DonorService()
     response_model=list[DonorResponse]
 )
 def get_all(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.list_donors(db)
 
@@ -40,7 +43,8 @@ def get_all(
 )
 def get_by_id(
         donor_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     donor = service.get_donor(
@@ -63,7 +67,8 @@ def get_by_id(
 )
 def add(
         donor_data: DonorCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     donor = Donor(
@@ -85,7 +90,8 @@ def add(
 def update(
         donor_id: int,
         donor_data: DonorUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     donor = service.get_donor(
@@ -114,7 +120,8 @@ def update(
 )
 def delete(
         donor_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     donor = service.get_donor(

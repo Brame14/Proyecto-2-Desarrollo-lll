@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+from app.auth.jwt_handler import get_current_user
+
 from app.model.delivery import Delivery
 
 from app.service.delivery_service import DeliveryService
@@ -29,7 +31,8 @@ service = DeliveryService()
     response_model=list[DeliveryResponse]
 )
 def get_all(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.list_deliveries(db)
 
@@ -40,7 +43,8 @@ def get_all(
 )
 def get_by_id(
         delivery_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     delivery = service.get_delivery(
@@ -63,7 +67,8 @@ def get_by_id(
 )
 def add(
         delivery_data: DeliveryCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     delivery = Delivery(
@@ -86,7 +91,8 @@ def add(
 def update(
         delivery_id: int,
         delivery_data: DeliveryUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     delivery = service.get_delivery(
@@ -116,7 +122,8 @@ def update(
 )
 def delete(
         delivery_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     delivery = service.get_delivery(
@@ -142,7 +149,8 @@ def delete(
 
 @router.get("/report/total")
 def total_deliveries(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return {
         "total_deliveries":
@@ -152,7 +160,8 @@ def total_deliveries(
     "/report/deliveries-by-campaign"
 )
 def deliveries_by_campaign(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.deliveries_by_campaign(
         db

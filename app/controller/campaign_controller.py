@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+from app.auth.jwt_handler import get_current_user
+
 from app.model.campaign import Campaign
 
 from app.service.campaign_service import CampaignService
@@ -29,7 +31,8 @@ service = CampaignService()
     response_model=list[CampaignResponse]
 )
 def get_all(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.list_campaigns(db)
 
@@ -40,7 +43,8 @@ def get_all(
 )
 def get_by_id(
         campaign_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     campaign = service.get_campaign(
@@ -63,7 +67,8 @@ def get_by_id(
 )
 def add(
         campaign_data: CampaignCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     campaign = Campaign(
@@ -86,7 +91,8 @@ def add(
 def update(
         campaign_id: int,
         campaign_data: CampaignUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     campaign = service.get_campaign(
@@ -116,7 +122,8 @@ def update(
 )
 def delete(
         campaign_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     campaign = service.get_campaign(

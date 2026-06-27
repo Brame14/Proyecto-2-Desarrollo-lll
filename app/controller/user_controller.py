@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+from app.auth.jwt_handler import get_current_user
+
 from app.model.user import User
 
 from app.service.user_service import UserService
@@ -31,7 +33,8 @@ service = UserService()
     response_model=list[UserResponse]
 )
 def get_all(
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     return service.list_users(db)
 
@@ -42,7 +45,8 @@ def get_all(
 )
 def get_by_id(
         user_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     user = service.get_user(
@@ -89,7 +93,8 @@ def add(
 def update(
         user_id: int,
         user_data: UserUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     user = service.get_user(
@@ -120,7 +125,8 @@ def update(
 )
 def delete(
         user_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
 
     user = service.get_user(
