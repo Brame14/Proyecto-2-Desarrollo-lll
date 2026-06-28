@@ -61,6 +61,8 @@ def get_by_id(
     return delivery
 
 
+from datetime import datetime
+
 @router.post(
     "/add",
     response_model=DeliveryResponse
@@ -71,11 +73,16 @@ def add(
         current_user: dict = Depends(get_current_user)
 ):
 
+
+    parsed_date = delivery_data.delivery_date
+    if isinstance(parsed_date, str):
+        parsed_date = datetime.strptime(parsed_date, "%Y-%m-%d").date()
+
     delivery = Delivery(
         beneficiary_id=delivery_data.beneficiary_id,
         toy_id=delivery_data.toy_id,
         campaign_id=delivery_data.campaign_id,
-        delivery_date=delivery_data.delivery_date
+        delivery_date=parsed_date
     )
 
     return service.create_delivery(

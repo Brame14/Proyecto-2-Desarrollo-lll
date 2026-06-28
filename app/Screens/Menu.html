@@ -1,10 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regalando Sonrisas - Panel Principal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body>
-$END$
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <div class="w-64 bg-indigo-900 text-white flex flex-col justify-between shadow-xl">
+        <div>
+            <div class="p-5 text-xl font-bold border-b border-indigo-800 tracking-wider text-center flex flex-col items-center justify-center">
+                <span class="text-2xl font-black text-amber-400">🎁 Regalando</span>
+                <span class="text-sm font-semibold tracking-widest text-indigo-200">SONRISAS</span>
+            </div>
+
+            <nav class="mt-6 px-4 space-y-1">
+                <a href="#" onclick="switchTab('donadores')" class="tab-btn flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200 bg-indigo-800 text-white" id="btn-donadores">
+                    👥 Donadores
+                </a>
+                <a href="#" onclick="switchTab('inventario')" class="tab-btn flex items-center px-4 py-3 text-sm font-medium rounded-md text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors duration-200" id="btn-inventario">
+                    🧸 Inventario (Juguetes)
+                </a>
+                <a href="#" onclick="switchTab('entregas')" class="tab-btn flex items-center px-4 py-3 text-sm font-medium rounded-md text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors duration-200" id="btn-entregas">
+                    📦 Entregas
+                </a>
+                <a href="#" onclick="switchTab('campanas')" class="tab-btn flex items-center px-4 py-3 text-sm font-medium rounded-md text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors duration-200" id="btn-campanas">
+                    🎗️ Campañas Solidarias
+                </a>
+                <a href="#" onclick="switchTab('beneficiarios')" class="tab-btn flex items-center px-4 py-3 text-sm font-medium rounded-md text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors duration-200" id="btn-beneficiarios">
+                    🏡 Beneficiarios
+                </a>
+                <a href="#" onclick="switchTab('usuarios')" class="tab-btn flex items-center px-4 py-3 text-sm font-medium rounded-md text-indigo-200 hover:bg-indigo-800 hover:text-white transition-colors duration-200" id="btn-usuarios">
+                    ⚙️ Control de Usuarios
+                </a>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-indigo-800">
+            <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors duration-200 shadow">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow px-6 py-4 flex justify-between items-center z-10">
+            <h1 id="main-title" class="text-2xl font-bold text-gray-800">Gestión de Donadores</h1>
+            <div class="flex items-center space-x-3">
+                <span id="user-display" class="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
+                    Cargando usuario...
+                </span>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 bg-gray-50">
+            <div id="alert-box" class="hidden mb-4 p-4 rounded-md text-sm font-medium"></div>
+
+            <div id="content-area" class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <p class="text-gray-600">Cargando modulo...</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+
+        document.getElementById('user-display').innerText = `👤 Rol: ${localStorage.getItem('token_type') || 'Usuario'}`;
+
+        async function apiFetch(endpoint, options = {}) {
+            const token = localStorage.getItem('token');
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+            const response = await fetch(endpoint, options);
+            if (response.status === 401) {
+                logout();
+            }
+            return response;
+        }
+
+        function showAlert(msg, isError = false) {
+            const box = document.getElementById('alert-box');
+            box.innerText = msg;
+            box.className = isError ? "bg-red-100 text-red-700 p-4 mb-4 rounded" : "bg-green-100 text-green-700 p-4 mb-4 rounded";
+            box.classList.remove('hidden');
+            setTimeout(() => box.classList.add('hidden'), 4000);
+        }
+
+        // --- MAPEO DE ACCIONES Y RENDERIZADO IMEC CORREGIDO POR ID ESPECÍFICO ---
+        const modules = {
+            donadores: {
+                title: "Gestión de Donadores",
+                endpoint: "/donors",
+                renderForm: () => `
+                    <form onsubmit="saveItem(event, '/donors/add')" class="space-y-4 max-w-md bg-gray-50 p-4 rounded border mb-6">
+                        <h3 class="font-bold text-gray-700">Registrar Nuevo Donador</h3>
+                        <input type="text" id="donor_name" placeholder="Nombre completo" required class="w-full p-2 border rounded text-sm">
+                        <input type="text" id="donor_phone" placeholder="Teléfono" required class="w-full p-2 border rounded text-sm">
+                        <input type="email" id="donor_email" placeholder="Correo Electrónico" required class="w-full p-2 border rounded text-sm">
+                        <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">Guardar</button>
+                    </form>`,
+                payload: () => ({
+                    name: document.getElementById('donor_name').value,
+                    phone: document.getElementById('donor_phone').value,
+                    email: document.getElementById('donor_email').value
+                }),
+                tableHeaders: ["ID Donador", "Nombre", "Teléfono", "Correo", "Acciones"],
+                tableRow: (item) => `
+                    <td class="px-4 py-2 border-b font-mono text-xs text-indigo-600 font-bold">${item.donor_id}</td>
+                    <td class="px-4 py-2 border-b font-medium">${item.name}</td>
+                    <td class="px-4 py-2 border-b">${item.phone}</td>
+                    <td class="px-4 py-2 border-b">${item.email}</td>
+                    <td class="px-4 py-2 border-b">
+                        <button onclick="deleteItem('/donors/delete/${item.donor_id}', 'donadores')" class="text-red-600 hover:underline text-sm font-medium">Eliminar</button>
+                    </td>`
+            },
+            inventario: {
+                title: "Inventario de Juguetes",
+                endpoint: "/toys",
+                renderForm: () => `
+                    <form onsubmit="saveItem(event, '/toys/add')" class="space-y-4 max-w-md bg-gray-50 p-4 rounded border mb-6">
+                        <h3 class="font-bold text-gray-700">Registrar Juguete</h3>
+                        <input type="text" id="toy_name" placeholder="Nombre del juguete" required class="w-full p-2 border rounded text-sm">
+                        <input type="text" id="toy_category" placeholder="Categoría (Ej: Peluches, Autos)" required class="w-full p-2 border rounded text-sm">
+                        <input type="text" id="toy_condition" placeholder="Condición (Ej: Nuevo, Usado)" required class="w-full p-2 border rounded text-sm">
+                        <input type="number" id="toy_donor" placeholder="ID del Donador" required class="w-full p-2 border rounded text-sm">
+                        <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">Registrar</button>
+                    </form>`,
+                payload: () => ({
+                    name: document.getElementById('toy_name').value,
+                    category: document.getElementById('toy_category').value,
+                    condition: document.getElementById('toy_condition').value,
+                    donor_id: parseInt(document.getElementById('toy_donor').value)
+                }),
+                tableHeaders: ["ID Juguete", "Juguete", "Categoría", "Estado", "ID Donador", "Acciones"],
+                tableRow: (item) => `
+                    <td class="px-4 py-2 border-b font-mono text-xs text-indigo-600 font-bold">${item.toy_id}</td>
+                    <td class="px-4 py-2 border-b font-medium">${item.name}</td>
+                    <td class="px-4 py-2 border-b">${item.category}</td>
+                    <td class="px-4 py-2 border-b">${item.condition}</td>
+                    <td class="px-4 py-2 border-b font-mono text-xs">${item.donor_id}</td>
+                    <td class="px-4 py-2 border-b">
+                        <button onclick="deleteItem('/toys/delete/${item.toy_id}', 'inventario')" class="text-red-600 hover:underline text-sm font-medium">Eliminar</button>
+                    </td>`
+            },
+            entregas: {
+    title: "Control de Entregas",
+    endpoint: "/deliveries",
+    renderForm: () => `
+        <form onsubmit="saveItem(event, '/deliveries/add')" class="space-y-4 max-w-md bg-gray-50 p-4 rounded border mb-6">
+            <h3 class="font-bold text-gray-700">Nueva Entrega</h3>
+            <input type="number" id="del_beneficiary" placeholder="ID Beneficiario" required class="w-full p-2 border rounded text-sm">
+            <input type="number" id="del_toy" placeholder="ID Juguete" required class="w-full p-2 border rounded text-sm">
+            <input type="number" id="del_campaign" placeholder="ID Campaña" required class="w-full p-2 border rounded text-sm">
+            <input type="date" id="del_date" required class="w-full p-2 border rounded text-sm">
+            <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">Confirmar</button>
+        </form>`,
+    payload: () => {
+        const beneficiaryId = document.getElementById('del_beneficiary').value;
+        const toyId = document.getElementById('del_toy').value;
+        const campaignId = document.getElementById('del_campaign').value;
+        const deliveryDate = document.getElementById('del_date').value;
+
+        return {
+            beneficiary_id: beneficiaryId ? parseInt(beneficiaryId, 10) : 0,
+            toy_id: toyId ? parseInt(toyId, 10) : 0,
+            campaign_id: campaignId ? parseInt(campaignId, 10) : 0,
+            delivery_date: deliveryDate || new Date().toISOString().split('T')[0] // Envía la fecha seleccionada o la de hoy si falla
+        };
+    },
+    tableHeaders: ["ID Entrega", "ID Beneficiario", "ID Juguete", "ID Campaña", "Fecha", "Acciones"],
+    tableRow: (item) => `
+        <td class="px-4 py-2 border-b font-mono text-xs text-indigo-600 font-bold">${item.delivery_id}</td>
+        <td class="px-4 py-2 border-b font-mono text-xs">${item.beneficiary_id}</td>
+        <td class="px-4 py-2 border-b font-mono text-xs">${item.toy_id}</td>
+        <td class="px-4 py-2 border-b font-mono text-xs">${item.campaign_id}</td>
+        <td class="px-4 py-2 border-b">${item.delivery_date}</td>
+        <td class="px-4 py-2 border-b">
+            <button onclick="deleteItem('/deliveries/delete/${item.delivery_id}', 'entregas')" class="text-red-600 hover:underline text-sm font-medium">Eliminar</button>
+        </td>`
+},
+            campanas: {
+                title: "Campañas Solidarias",
+                endpoint: "/campaigns",
+                renderForm: () => `
+                    <form onsubmit="saveItem(event, '/campaigns/add')" class="space-y-4 max-w-md bg-gray-50 p-4 rounded border mb-6">
+                        <h3 class="font-bold text-gray-700">Crear Campaña</h3>
+                        <input type="text" id="cam_name" placeholder="Nombre de campaña" required class="w-full p-2 border rounded text-sm">
+                        <textarea id="cam_desc" placeholder="Descripción" required class="w-full p-2 border rounded text-sm"></textarea>
+                        <input type="date" id="cam_date" required class="w-full p-2 border rounded text-sm">
+                        <input type="text" id="cam_loc" placeholder="Ubicación / Lugar" required class="w-full p-2 border rounded text-sm">
+                        <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">Crear</button>
+                    </form>`,
+                payload: () => ({
+                    name: document.getElementById('cam_name').value,
+                    description: document.getElementById('cam_desc').value,
+                    date: document.getElementById('cam_date').value,
+                    location: document.getElementById('cam_loc').value
+                }),
+                tableHeaders: ["ID Campaña", "Campaña", "Descripción", "Fecha", "Ubicación", "Acciones"],
+                tableRow: (item) => `
+                    <td class="px-4 py-2 border-b font-mono text-xs text-indigo-600 font-bold">${item.campaign_id}</td>
+                    <td class="px-4 py-2 border-b font-medium">${item.name}</td>
+                    <td class="px-4 py-2 border-b">${item.description}</td>
+                    <td class="px-4 py-2 border-b">${item.date}</td>
+                    <td class="px-4 py-2 border-b">${item.location}</td>
+                    <td class="px-4 py-2 border-b">
+                        <button onclick="deleteItem('/campaigns/delete/${item.campaign_id}', 'campanas')" class="text-red-600 hover:underline text-sm font-medium">Eliminar</button>
+                    </td>`
+            },
+            beneficiarios: {
+                title: "Gestión de Beneficiarios",
+                endpoint: "/beneficiaries",
+                renderForm: () => `
+                    <form onsubmit="saveItem(event, '/beneficiaries/add')" class="space-y-4 max-w-md bg-gray-50 p-4 rounded border mb-6">
+                        <h3 class="font-bold text-gray-700">Registrar Beneficiario</h3>
+                        <input type="text" id="ben_name" placeholder="Nombre completo" required class="w-full p-2 border rounded text-sm">
+                        <input type="number" id="ben_age" placeholder="Edad" required class="w-full p-2 border rounded text-sm">
+                        <input type="text" id="ben_gender" placeholder="Género" required class="w-full p-2 border rounded text-sm">
+                        <input type="text" id="ben_comm" placeholder="Comunidad / Barrio" required class="w-full p-2 border rounded text-sm">
+                        <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">Guardar</button>
+                    </form>`,
+                payload: () => ({
+                    name: document.getElementById('ben_name').value,
+                    age: parseInt(document.getElementById('ben_age').value),
+                    gender: document.getElementById('ben_gender').value,
+                    community: document.getElementById('ben_comm').value
+                }),
+                tableHeaders: ["ID Beneficiario", "Nombre", "Edad", "Género", "Comunidad", "Acciones"],
+                tableRow: (item) => `
+                    <td class="px-4 py-2 border-b font-mono text-xs text-indigo-600 font-bold">${item.beneficiary_id}</td>
+                    <td class="px-4 py-2 border-b font-medium">${item.name}</td>
+                    <td class="px-4 py-2 border-b">${item.age}</td>
+                    <td class="px-4 py-2 border-b">${item.gender}</td>
+                    <td class="px-4 py-2 border-b">${item.community}</td>
+                    <td class="px-4 py-2 border-b">
+                        <button onclick="deleteItem('/beneficiaries/delete/${item.beneficiary_id}', 'beneficiarios')" class="text-red-600 hover:underline text-sm font-medium">Eliminar</button>
+                    </td>`
+            },
+            usuarios: {
+                title: "Control de Usuarios",
+                endpoint: "/users",
+                renderForm: () => `
+                    <form onsubmit="saveItem(event, '/users/add')" class="space-y-4 max-w-md bg-gray-50 p-4 rounded border mb-6">
+                        <h3 class="font-bold text-gray-700">Nuevo Usuario</h3>
+                        <input type="text" id="usr_name" placeholder="Username" required class="w-full p-2 border rounded text-sm">
+                        <input type="password" id="usr_pass" placeholder="Contraseña" required class="w-full p-2 border rounded text-sm">
+                        <select id="usr_role" class="w-full p-2 border rounded text-sm bg-white">
+                            <option value="admin">Administrador</option>
+                            <option value="voluntario">Voluntario</option>
+                        </select>
+                        <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">Registrar</button>
+                    </form>`,
+                payload: () => ({
+                    username: document.getElementById('usr_name').value,
+                    password: document.getElementById('usr_pass').value,
+                    role: document.getElementById('usr_role').value
+                }),
+                tableHeaders: ["ID Usuario", "Usuario", "Rol", "Acciones"],
+                tableRow: (item) => `
+                    <td class="px-4 py-2 border-b font-mono text-xs text-indigo-600 font-bold">${item.user_id}</td>
+                    <td class="px-4 py-2 border-b font-medium">${item.username}</td>
+                    <td class="px-4 py-2 border-b"><span class="px-2 py-1 bg-gray-200 rounded text-xs">${item.role}</span></td>
+                    <td class="px-4 py-2 border-b">
+                        <button onclick="deleteItem('/users/delete/${item.user_id}', 'usuarios')" class="text-red-600 hover:underline text-sm font-medium">Eliminar</button>
+                    </td>`
+            }
+        };
+
+        let currentModuleKey = 'donadores';
+
+        async function switchTab(moduleKey) {
+            currentModuleKey = moduleKey;
+            const config = modules[moduleKey];
+            if (!config) return;
+
+            document.getElementById('main-title').innerText = config.title;
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-800', 'text-white');
+                btn.classList.add('text-indigo-200', 'hover:bg-indigo-800', 'hover:text-white');
+            });
+            document.getElementById(`btn-${moduleKey}`)?.classList.add('bg-indigo-800', 'text-white');
+
+            try {
+                const res = await apiFetch(`${config.endpoint}/all`);
+                const items = await res.json();
+
+                let tableHtml = `
+                    <div class="overflow-x-auto mt-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-700 text-sm">
+                                    ${config.tableHeaders.map(h => `<th class="px-4 py-3 border-b">${h}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600 text-sm">
+                                ${items.length === 0 ? `<tr><td colspan="${config.tableHeaders.length}" class="p-4 text-center">No hay registros aún</td></tr>` : items.map(config.tableRow).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+
+                document.getElementById('content-area').innerHTML = config.renderForm() + tableHtml;
+            } catch (err) {
+                showAlert("Error de conexión al cargar el módulo.", true);
+            }
+        }
+
+        async function saveItem(event, url) {
+            event.preventDefault();
+            const config = modules[currentModuleKey];
+
+            try {
+                const res = await apiFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify(config.payload())
+                });
+
+                if (res.ok) {
+                    showAlert("Registro agregado exitosamente.");
+                    switchTab(currentModuleKey);
+                } else {
+                    const data = await res.json();
+                    showAlert(data.detail || "Error al guardar el registro.", true);
+                }
+            } catch (err) {
+                showAlert("Error en el servidor frontend.", true);
+            }
+        }
+
+        async function deleteItem(url, moduleKey) {
+            if (!confirm("¿Está seguro de que desea eliminar este registro?")) return;
+
+            try {
+                const res = await apiFetch(url, { method: 'DELETE' });
+                if (res.ok) {
+                    showAlert("Registro eliminado correctamente.");
+                    switchTab(moduleKey);
+                } else {
+                    showAlert("No se pudo eliminar el registro.", true);
+                }
+            } catch (err) {
+                showAlert("Error al conectar con la API.", true);
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/login';
+        }
+
+        switchTab('donadores');
+    </script>
 </body>
 </html>
