@@ -301,7 +301,7 @@
                                 </tr>
                             </thead>
                             <tbody class="text-gray-600 text-sm">
-                                ${items.length === 0 ? `<tr><td colspan="${config.tableHeaders.length}" class="p-4 text-center">No hay registros aún</td></tr>` : items.map(config.tableRow).join('')}
+                                ${items.length === 0 ? `<tr><td colspan="${config.tableHeaders.length}" class="p-4 text-center">No hay registros aún</td></tr>` : items.map(item => `<tr class="hover:bg-gray-50">${config.tableRow(item)}</tr>`).join('')}
                             </tbody>
                         </table>
                     </div>`;
